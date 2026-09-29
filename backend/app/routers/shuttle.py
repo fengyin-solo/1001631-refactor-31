@@ -6,7 +6,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Query
 
 from app.schemas import ActionResult, EntryPayload, PageResult
-from app.services.shuttle import ShuttleService
+from app.services.shuttle import VALIDATION_ERROR_PREFIX, ShuttleService
 
 router = APIRouter(prefix="/api/shuttle", tags=["摆渡接送"])
 
@@ -44,7 +44,10 @@ def create_entry(payload: EntryPayload) -> ActionResult:
     """登记一条摆渡任务，缺字段时说明原因而不是静默丢弃。"""
     entry, missing = service.create_entry(payload.values)
     if missing:
-        return ActionResult(ok=False, message=f"缺少必填字段：{'、'.join(missing)}")
+        message = "、".join(missing)
+        if not message.startswith(VALIDATION_ERROR_PREFIX):
+            message = f"缺少必填字段：{message}"
+        return ActionResult(ok=False, message=message)
     return ActionResult(ok=True, message="摆渡任务已登记", entry=entry)
 
 
